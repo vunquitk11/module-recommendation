@@ -6,7 +6,10 @@ import os
 import sys
 import recommender
 import pandas as pd
+<<<<<<< HEAD
 import scheduler
+=======
+>>>>>>> b6960a0e20f622755e513ac1fe98665f90cb57e9
 
 mysql = MySQL()
 

@@ -4,6 +4,7 @@ import numpy as np
 import scipy
 import re
 from sklearn.feature_extraction.text import TfidfVectorizer
+<<<<<<< HEAD
 pd.options.mode.chained_assignment = None
 
 tf_vectorizer = TfidfVectorizer(
@@ -44,6 +45,23 @@ class Recommender:
 
     def load_vectors(self):
         self.vectors = np.load(self._p("feature_vectors.npy"))
+=======
+
+class Recommender:
+    def __init__(self, mysql):
+        self.mysql = mysql
+
+    def connect(self):
+        connection = self.mysql.connect()
+        self.cursor = connection.cursor()
+
+    @staticmethod
+    def save_all_vectors(vectors):
+        np.save("all_vectors", vectors)
+
+    def load_vectors(self):
+        self.vectors = np.load("all_vectors.npy")
+>>>>>>> b6960a0e20f622755e513ac1fe98665f90cb57e9
 
     def init_all_dataframe(self):
         self.activity_df = self.build_df("activities", "id,type,user_id,target_id")
@@ -56,6 +74,7 @@ class Recommender:
             "id,video_src,thumbnail,name,description,duration,tags"
         )
 
+<<<<<<< HEAD
     def save_all_dataframe(self):
         for attr in ["history_df", "activity_df", "video_df"]:
             getattr(self, attr).to_csv(self._p(attr + ".csv"))
@@ -65,6 +84,9 @@ class Recommender:
         if not self.override and os.path.isfile(fpath):
             return pd.read_csv(fpath)
 
+=======
+    def build_df(self, table, columns, condition=""):
+>>>>>>> b6960a0e20f622755e513ac1fe98665f90cb57e9
         sql = f"SELECT {columns} from {table}"
         if condition:
             sql += f"WHERE ${condition}"
@@ -74,6 +96,7 @@ class Recommender:
         df = pd.DataFrame(data)
         df.columns = columns.split(",")
         return df
+<<<<<<< HEAD
 
     def build_vectors(self):
         return
@@ -156,3 +179,18 @@ def recommend_for_video(video_id):
 
 def recommend_for_user(user_id):
     return 1
+=======
+    
+
+## Export ##
+def recommend_for_video(video_id, cursor):
+    
+    
+    return videos
+
+
+def recommend_for_user(user_id, cursor):
+    
+    
+    return videos
+>>>>>>> b6960a0e20f622755e513ac1fe98665f90cb57e9
