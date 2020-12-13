@@ -18,14 +18,19 @@ def set_interval(func, sec):
 
 
 def update_recommender_data():
-    engine = recommender.Recommender()
-    # engine.connect(app.mysql)
-    engine.load_vectors()
-    engine.init_all_dataframe()
+    print("Start update data")
+    start = datetime.datetime.now()
 
-    print(engine.recommend_for_vid(24))
+    engine = recommender.Recommender()
+    engine.allow_update()
+    engine.connect(app.mysql)
+    # engine.load_vectors()
+    engine.init_all_dataframe()
+    engine.save_all_dataframe()
+
+    print(f"Finished in {datetime.datetime.now() - start}")
 
 #  ================ export ================ #
+update_recommender_data()
 def start_scheduler():
-    return
-    set_interval(update_recommender_data, one_minute * 500)
+    set_interval(update_recommender_data, one_minute * 15)

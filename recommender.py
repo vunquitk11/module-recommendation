@@ -4,7 +4,6 @@ import numpy as np
 import scipy
 import re
 from sklearn.feature_extraction.text import TfidfVectorizer
-<<<<<<< HEAD
 pd.options.mode.chained_assignment = None
 
 tf_vectorizer = TfidfVectorizer(
@@ -45,23 +44,6 @@ class Recommender:
 
     def load_vectors(self):
         self.vectors = np.load(self._p("feature_vectors.npy"))
-=======
-
-class Recommender:
-    def __init__(self, mysql):
-        self.mysql = mysql
-
-    def connect(self):
-        connection = self.mysql.connect()
-        self.cursor = connection.cursor()
-
-    @staticmethod
-    def save_all_vectors(vectors):
-        np.save("all_vectors", vectors)
-
-    def load_vectors(self):
-        self.vectors = np.load("all_vectors.npy")
->>>>>>> b6960a0e20f622755e513ac1fe98665f90cb57e9
 
     def init_all_dataframe(self):
         self.activity_df = self.build_df("activities", "id,type,user_id,target_id")
@@ -74,33 +56,36 @@ class Recommender:
             "id,video_src,thumbnail,name,description,duration,tags"
         )
 
-<<<<<<< HEAD
     def save_all_dataframe(self):
         for attr in ["history_df", "activity_df", "video_df"]:
             getattr(self, attr).to_csv(self._p(attr + ".csv"))
+
+    def find(self, sql):
+        self.cursor.execute(sql)
+        data = self.cursor.fetchall()
+        return data
+
+    def findone(self, sql):
+        self.cursor.execute(sql)
+        data = self.cursor.fetchone()
+        return data
 
     def build_df(self, table, columns, condition=""):
         fpath = self._p(table + ".csv")
         if not self.override and os.path.isfile(fpath):
             return pd.read_csv(fpath)
 
-=======
-    def build_df(self, table, columns, condition=""):
->>>>>>> b6960a0e20f622755e513ac1fe98665f90cb57e9
         sql = f"SELECT {columns} from {table}"
         if condition:
             sql += f"WHERE ${condition}"
-
-        self.cursor.execute(sql)
-        data = self.cursor.fetchall()
+        
+        data = self.find(sql)
+        
         df = pd.DataFrame(data)
         df.columns = columns.split(",")
         return df
-<<<<<<< HEAD
 
     def build_vectors(self):
-        return
-
         self.init_all_dataframe()
         # Fill NaN values by empty string
         self.video_df["description"].fillna("", inplace=True)
@@ -139,9 +124,17 @@ class Recommender:
     def get_user_activities(self, user_id, action="like"):
         return self.activity_df[(self.activity_df["user_id"] == user_id) & (self.activity_df["type"] == action)]
 
-    def get_last_video(self, user_id, n=100):
-        user_filter = self.history_df["user_id"] == user_id
-        videos = self.history_df[user_filter]
+    def recommend_for_user(self, user_id, limit=20):
+        sql = f"SELECT user_id,video_id from watch_histories WHERE user_id = {user_id} LIMIT {limit}"
+        video_ids = self.find(sql)
+
+        if not video_ids:
+            return f"User id {user_id} does not exist"
+
+        videos = []
+        for vid_id in video_ids:
+            videos += self.recommend_for_vid(vid_id[0], 3)
+
         return videos
 
     def recommend_for_vid(self, video_id, length=10):
@@ -150,6 +143,7 @@ class Recommender:
             ifx = idx[0]
         else:
             return "not found"
+
         most_similar_with = [
             (
                 i,
@@ -158,7 +152,6 @@ class Recommender:
         ]
 
         bests = sorted(most_similar_with, reverse=True, key=lambda x: x[1])[0: length + 1]
-
         return [
             {
                 "video_id": int(self.video_df.iloc[best[0]]["id"]),
@@ -173,24 +166,12 @@ engine.load_vectors()
 engine.init_all_dataframe()
 
 #  ================ export ================ #
-def recommend_for_video(video_id):
-    return engine.recommend_for_vid(video_id)
+def recommend_for_video(video_id, length=10):
+    return engine.recommend_for_vid(video_id, length)
 
 
 def recommend_for_user(user_id):
-    return 1
-=======
+    return engine.recommend_for_user(user_id)
     
 
 ## Export ##
-def recommend_for_video(video_id, cursor):
-    
-    
-    return videos
-
-
-def recommend_for_user(user_id, cursor):
-    
-    
-    return videos
->>>>>>> b6960a0e20f622755e513ac1fe98665f90cb57e9

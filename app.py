@@ -6,12 +6,11 @@ import os
 import sys
 import recommender
 import pandas as pd
-<<<<<<< HEAD
 import scheduler
-=======
->>>>>>> b6960a0e20f622755e513ac1fe98665f90cb57e9
 
 mysql = MySQL()
+
+rec_engine = recommender.engine
 
 app = Flask(__name__)
 cors = CORS(app)
@@ -27,28 +26,44 @@ mysql.init_app(app)
 def response_json(data):
     return make_response(json.dumps(data))
 
+def get_int(val, df=10):
+    if not val:
+        return df
+
+    if isinstance(val, int):
+        return val
+    
+    if val.isdigit():
+        return int(val)
+
+    return df
+
 @app.route("/")
 def index():
-    return response_json('msg', 1)
+    return response_json("Video recommender")
 
 @app.route("/recommend-by-video/<video_id>")
-def recommend_for_video(video_id=-1):
-    if video_id == -1:
-        return response_json("msg", "Please provide video id")
+def recommend_for_video(video_id):
+    length = get_int(request.args.get("limit"))
+    length = min(length, 100)
+    vid_id = get_int(video_id, None)
+    if not vid_id:
+        return response_json({"msg": f"Invalid video id: {video_id}"})
 
-    videos = recommender.recommend_for_video(int(video_id))
-
-    print(videos)
+    videos = recommender.recommend_for_video(vid_id, length)
 
     return response_json(videos)
 
 
 @app.route("/recommend-by-user/<user_id>")
-def recommend_for_user(user_id=-1):
-    if user_id == -1:
-        return response_json("msg", "Please provide video id")
+def recommend_for_user(user_id):
+    rec_engine.connect(mysql)
+    uid = get_int(user_id, None)
 
-    videos = recommender.recommend_for_user(user_id)
+    if not uid:
+        return response_json({"msg": f"Invalid user id: {user_id}"})
+
+    videos = recommender.recommend_for_user(uid)
 
     return response_json(videos)
 
