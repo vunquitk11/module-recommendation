@@ -27,8 +27,8 @@ In these features, `name` and `description` are text format, we will use TFIDF v
 
 ## TODO
 
-- [ ] Filter videos user already viewed
+- [x] Filter videos user already viewed
 
-- [ ] Improve performance
+- [x] Improve performance
 
-- [ ] Sort by similarity
+- [x] Sort by similarity
