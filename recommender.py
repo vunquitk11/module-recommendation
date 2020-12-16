@@ -24,6 +24,24 @@ def concat_feat(feats, mat):
     row_max = combined.max(axis=0)
     return combined / row_max[np.newaxis, :]
 
+
+def sort_by_score(videos):
+    videos = [dict(vid) for vid in set(tuple(item.items()) for item in videos)]
+
+    videos = sorted(videos, key=lambda x: x["score"], reverse=True)
+    # videos = [vid, keys) for vid in videos]
+
+    return videos
+
+
+def filter_viewed_videos(videos, viewed_ids):
+    res = []
+    for vid in videos:
+        if vid["video_id"] not in viewed_ids:
+            res.append(vid)
+
+    return res
+
 class Recommender:
     def __init__(self):
         self.save_dir = "./storage"
@@ -125,24 +143,31 @@ class Recommender:
         return self.activity_df[(self.activity_df["user_id"] == user_id) & (self.activity_df["type"] == action)]
 
     def recommend_for_user(self, user_id, limit=20):
-        sql = f"SELECT user_id,video_id from watch_histories WHERE user_id = {user_id} LIMIT {limit}"
+        sql = f"SELECT user_id,video_id,created_at from watch_histories" \
+              f" WHERE user_id = {user_id} ORDER BY created_at DESC LIMIT 50 "
+
+        print(sql)
         video_ids = self.find(sql)
 
         if not video_ids:
-            return f"User id {user_id} does not exist"
+            return []
 
         videos = []
+        viewed_ids = [vid[0] for vid in video_ids]
         for vid_id in video_ids:
-            videos += self.recommend_for_vid(vid_id[0], 3)
-
-        return videos
+            videos += filter_viewed_videos(self.recommend_for_vid(vid_id[0], 20), viewed_ids)
+            if len(videos) >= limit:
+                break
+        
+        videos = sort_by_score(videos)
+        return videos[:limit]
 
     def recommend_for_vid(self, video_id, length=10):
         idx = np.where(self.video_df["id"] == video_id)[0]
         if idx:
             ifx = idx[0]
         else:
-            return "not found"
+            return []
 
         most_similar_with = [
             (
@@ -151,14 +176,21 @@ class Recommender:
             ) for i in range(len(self.vectors))
         ]
 
-        bests = sorted(most_similar_with, reverse=True, key=lambda x: x[1])[0: length + 1]
-        return [
-            {
-                "video_id": int(self.video_df.iloc[best[0]]["id"]),
-                "name": str(self.video_df.iloc[best[0]]["name"]),
-                "score": float(best[1]) if best[1] != 1 else "input",
-            } for best in bests
-        ]
+        bests = sorted(most_similar_with, reverse=True, key=lambda x: x[1])[1: length + 1]
+
+        results = []
+        for best in bests:
+            id_, score = best
+            vid_df = self.video_df.iloc[id_]
+            results.append({
+                "video_id": int(vid_df["id"]),
+                "name": str(vid_df["name"]),
+                "video_src": str(vid_df["video_src"]),
+                "thumbnail": str(vid_df["thumbnail"]),
+                "score": float(score),
+            })
+
+        return results
 
 engine = Recommender()
 # engine.connect(app.mysql)
@@ -166,12 +198,9 @@ engine.load_vectors()
 engine.init_all_dataframe()
 
 #  ================ export ================ #
-def recommend_for_video(video_id, length=10):
-    return engine.recommend_for_vid(video_id, length)
+def recommend_for_video(video_id, limit=10):
+    return engine.recommend_for_vid(video_id, limit)
 
 
-def recommend_for_user(user_id):
-    return engine.recommend_for_user(user_id)
-    
-
-## Export ##
+def recommend_for_user(user_id, limit=10):
+    return engine.recommend_for_user(user_id, limit)

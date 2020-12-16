@@ -44,13 +44,13 @@ def index():
 
 @app.route("/recommend-by-video/<video_id>")
 def recommend_for_video(video_id):
-    length = get_int(request.args.get("limit"))
-    length = min(length, 100)
+    limit = get_int(request.args.get("limit"))
+    limit = min(limit, 100)
     vid_id = get_int(video_id, None)
     if not vid_id:
         return response_json({"msg": f"Invalid video id: {video_id}"})
 
-    videos = recommender.recommend_for_video(vid_id, length)
+    videos = recommender.recommend_for_video(vid_id, limit)
 
     return response_json(videos)
 
@@ -63,7 +63,9 @@ def recommend_for_user(user_id):
     if not uid:
         return response_json({"msg": f"Invalid user id: {user_id}"})
 
-    videos = recommender.recommend_for_user(uid)
+    limit = get_int(request.args.get("limit"))
+    limit = min(limit, 100)
+    videos = recommender.recommend_for_user(uid, limit)
 
     return response_json(videos)
 
