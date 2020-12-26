@@ -146,7 +146,6 @@ class Recommender:
         sql = f"SELECT user_id,video_id,created_at from watch_histories" \
               f" WHERE user_id = {user_id} ORDER BY created_at DESC LIMIT 50 "
 
-        print(sql)
         video_ids = self.find(sql)
 
         if not video_ids:
@@ -155,9 +154,13 @@ class Recommender:
         videos = []
         viewed_ids = [vid[0] for vid in video_ids]
         for vid_id in video_ids:
-            videos += filter_viewed_videos(self.recommend_for_vid(vid_id[0], 20), viewed_ids)
+            videos += filter_viewed_videos(self.recommend_for_vid(vid_id[0], 10), viewed_ids)
             if len(videos) >= limit:
                 break
+
+        if len(videos) < limit:
+            rest = limit - len(videos)
+            videos += self.recommend_for_vid(videos[0]["video_id"], rest)
         
         videos = sort_by_score(videos)
         return videos[:limit]
