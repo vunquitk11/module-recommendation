@@ -22,6 +22,7 @@ app.config['MYSQL_DATABASE_DB'] = 'vitube'
 app.config['MYSQL_DATABASE_HOST'] = 'localhost'
 
 mysql.init_app(app)
+rec_engine.connect(mysql)
 
 def response_json(data):
     return make_response(json.dumps(data))
@@ -57,7 +58,6 @@ def recommend_for_video(video_id):
 
 @app.route("/recommend-by-user/<user_id>")
 def recommend_for_user(user_id):
-    rec_engine.connect(mysql)
     uid = get_int(user_id, None)
 
     if not uid:
