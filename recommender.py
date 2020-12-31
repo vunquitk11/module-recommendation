@@ -54,8 +54,8 @@ class Recommender:
         self.override = True
 
     def connect(self, mysql):
-        connection = mysql.connect()
-        self.cursor = connection.cursor()
+        self.connection = mysql.connect()
+        self.cursor = self.connection.cursor()
 
     def save_vectors(self, vectors):
         np.save(self._p("feature_vectors.npy"), vectors)
@@ -82,6 +82,10 @@ class Recommender:
         self.cursor.execute(sql)
         data = self.cursor.fetchall()
         return data
+
+    def update(self, sql):
+        self.cursor.execute(sql)
+        self.connection.commit()
 
     def findone(self, sql):
         self.cursor.execute(sql)
@@ -146,7 +150,6 @@ class Recommender:
         sql = f"SELECT user_id,video_id,created_at from watch_histories" \
               f" WHERE user_id = {user_id} ORDER BY created_at DESC LIMIT 50 "
 
-        print(sql)
         video_ids = self.find(sql)
 
         if not video_ids:
@@ -155,14 +158,27 @@ class Recommender:
         videos = []
         viewed_ids = [vid[0] for vid in video_ids]
         for vid_id in video_ids:
-            videos += filter_viewed_videos(self.recommend_for_vid(vid_id[0], 20), viewed_ids)
+            videos += filter_viewed_videos(self.recommend_for_vid(vid_id[0], 10), viewed_ids)
             if len(videos) >= limit:
                 break
+
+        if len(videos) < limit:
+            rest = limit - len(videos)
+            videos += self.recommend_for_vid(videos[0]["video_id"], rest, update_db=False)
         
         videos = sort_by_score(videos)
+        
+        try:
+            rec_ids = f"[{','.join([str(vid['video_id']) for vid in videos])}]"
+            # Insert to db
+            update_sql = f"UPDATE users SET array_recommend_video = '{rec_ids}' where id = {user_id}"
+            self.update(update_sql)
+        except Exception as e:
+            print(f"Could not update users table", str(e))
+
         return videos[:limit]
 
-    def recommend_for_vid(self, video_id, length=10):
+    def recommend_for_vid(self, video_id, length=10, update_db=True):
         idx = np.where(self.video_df["id"] == video_id)[0]
         if idx:
             ifx = idx[0]
@@ -189,6 +205,15 @@ class Recommender:
                 "thumbnail": str(vid_df["thumbnail"]),
                 "score": float(score),
             })
+
+        if update_db:
+            try:
+                rec_ids = f"[{','.join([str(vid['video_id']) for vid in results])}]"
+                # Insert to db
+                update_sql = f"UPDATE videos SET array_recommend_video = '{rec_ids}' WHERE id = {video_id}"
+                self.update(update_sql)
+            except Exception as e:
+                print("Could not update videos table", str(e))
 
         return results
 

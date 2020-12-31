@@ -1,6 +1,10 @@
 
 # Video recommender - content-based filtering
 
+## 1. Hệ Thống Khuyến Nghị
+
+
+
 ## 1. Build feature vectors
 
 - Check the [notebook](./video_recommender.ipynb) for more detail
