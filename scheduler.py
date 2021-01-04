@@ -33,4 +33,4 @@ def update_recommender_data():
 #  ================ export ================ #
 update_recommender_data()
 def start_scheduler():
-    set_interval(update_recommender_data, one_minute * 15)
+    set_interval(update_recommender_data, one_minute * 10)

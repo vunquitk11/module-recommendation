@@ -146,9 +146,9 @@ class Recommender:
     def get_user_activities(self, user_id, action="like"):
         return self.activity_df[(self.activity_df["user_id"] == user_id) & (self.activity_df["type"] == action)]
 
-    def recommend_for_user(self, user_id, limit=20):
+    def recommend_for_user(self, user_id, limit=16):
         sql = f"SELECT user_id,video_id,created_at from watch_histories" \
-              f" WHERE user_id = {user_id} ORDER BY created_at DESC LIMIT 50 "
+              f" WHERE user_id = {user_id} ORDER BY id DESC LIMIT 50 "
 
         video_ids = self.find(sql)
 
@@ -158,7 +158,7 @@ class Recommender:
         videos = []
         viewed_ids = [vid[0] for vid in video_ids]
         for vid_id in video_ids:
-            videos += filter_viewed_videos(self.recommend_for_vid(vid_id[0], 10), viewed_ids)
+            videos += filter_viewed_videos(self.recommend_for_vid(vid_id[0], 16), viewed_ids)
             if len(videos) >= limit:
                 break
 
@@ -200,9 +200,9 @@ class Recommender:
             vid_df = self.video_df.iloc[id_]
             results.append({
                 "video_id": int(vid_df["id"]),
-                "name": str(vid_df["name"]),
-                "video_src": str(vid_df["video_src"]),
-                "thumbnail": str(vid_df["thumbnail"]),
+                # "name": str(vid_df["name"]),
+                # "video_src": str(vid_df["video_src"]),
+                # "thumbnail": str(vid_df["thumbnail"]),
                 "score": float(score),
             })
 
@@ -227,5 +227,5 @@ def recommend_for_video(video_id, limit=10):
     return engine.recommend_for_vid(video_id, limit)
 
 
-def recommend_for_user(user_id, limit=10):
+def recommend_for_user(user_id, limit=16):
     return engine.recommend_for_user(user_id, limit)
