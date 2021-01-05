@@ -7,7 +7,7 @@
 
   ## 1. Build feature vectors
 
-  - Check the [notebook](./video_recommender.ipynb) for more detail
+  By Nguyen Quang Vu (vunquitk11@gmail.com)
 
   The used features for similarity measurement are:
 
